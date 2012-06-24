@@ -13,6 +13,7 @@ import uuid
 import xml.sax.saxutils
 
 import boto.dynamodb
+import boto.dynamodb.condition
 import cherrypy
 import ThreeScalePY
 
@@ -27,19 +28,41 @@ class Website:
     
     @cherrypy.expose
     @cherrypy.tools.parse_json()
-    @cherrypy.tools.allow(methods=['POST'])
-    def default(self, *args):
+    @cherrypy.tools.allow(methods=['GET','POST'])
+    def default(self, custid, resource_name, key=None):
+        if cherrypy.request.method == 'GET':
+            return self.handle_get_for_customer(custid, key)
+        else:
+            return self.handle_post()
+    
+    def handle_get_for_customer(self, custid, key):
         cherrypy.response.headers['Content-Type'] = 'application/json'
+        ThreeScalePY.ThreeScaleAuthorizeUserKey(THREESCALE_PROVIDER_KEY, None, None, key).authorize()
+        hash_key = custid
+        #upper_timestamp = time.time()
+        upper_timestamp = 1201934760.0 + 1800
+        lower_timestamp = upper_timestamp - 3600
+        range_key_condition = boto.dynamodb.condition.BETWEEN(lower_timestamp, upper_timestamp)
+        entries = self.table.query(hash_key, range_key_condition)
+        print repr(entries)
+        result = {}
+        result["custid"] = custid
+        result["entries"] = []
+        for entry in entries:
+            result["entries"].append(entry)
+        return json.dumps(result)
+    
+    def handle_post(self):
         json_object = cherrypy.request.json
         print repr(json_object)
-        custid = json_object["custID"]
+        custid = json_object["custid"]
         key = json_object["key"]
         entries = json_object["entries"]
         
         ThreeScalePY.ThreeScaleAuthorizeUserKey(THREESCALE_PROVIDER_KEY, None, None, key).authorize()
         
         # {
-        #     'custID': 'c00db300',
+        #     'custid': 'c00db300',
         #     'key': '84904069f5d7b6434a040fdebc3a8942',
         #     'entries': [
         #         {
