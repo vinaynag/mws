@@ -1,0 +1,62 @@
+#!/bin/sh
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+. /lib/init/vars.sh
+. /lib/lsb/init-functions
+
+do_install() {
+    log_begin_msg "Installing script into /etc/"
+    SCRIPTNAME=`basename $0`
+    cat $0 >/etc/init.d/$SCRIPTNAME && \
+    chmod +x /etc/init.d/$SCRIPTNAME && \
+    ln -sf ../init.d/$SCRIPTNAME /etc/rc2.d/S10$SCRIPTNAME && \
+    ln -sf ../init.d/$SCRIPTNAME /etc/rc3.d/S10$SCRIPTNAME && \
+    ln -sf ../init.d/$SCRIPTNAME /etc/rc4.d/S10$SCRIPTNAME && \
+    ln -sf ../init.d/$SCRIPTNAME /etc/rc5.d/S10$SCRIPTNAME && \
+    log_end_msg 0 || log_end_msg 1
+}
+
+do_start() {
+    log_begin_msg "Loading firewall rule to redirect port 80 to 8080"
+    /sbin/iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
+    log_begin_msg "Loading firewall rule to redirect port 443 to 8443"
+    /sbin/iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 8443
+    log_end_msg 0
+}
+
+do_stop() {
+    log_begin_msg "Removing firewall rule that redirects port 80 to 8080"
+    while /sbin/iptables -t nat -D PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080 2>/dev/null; do
+    log_action_msg "Removed rule."
+    done
+    log_begin_msg "Removing firewall rule that redirects port 443 to 8443"
+    while /sbin/iptables -t nat -D PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 8443 2>/dev/null; do
+    log_action_msg "Removed rule."
+    done
+    log_end_msg 0
+}
+
+case "$1" in
+    install)
+    do_install
+    ;;
+    start)
+    do_start
+    exit 0
+        ;;
+    restart|reload|force-reload)
+    do_stop
+    do_start
+    exit 0
+        ;;
+    stop)
+    do_stop
+        ;;
+    status)
+    /sbin/iptables -t nat -L PREROUTING
+    ;;
+    *)
+        log_action_msg "Usage: $0 start|stop|restart|status|install"
+        exit 3
+        ;;
+esac
