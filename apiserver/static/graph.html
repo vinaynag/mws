@@ -1,0 +1,156 @@
+<html>
+  <head>
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      var response = [];
+	var count200 = 0;
+	var count201 = 0;
+var count202 = 0;
+var count203 = 0;
+var count204 = 0;
+var count206 = 0;
+var count300 = 0;
+var count301 = 0;
+var count302 = 0;
+var count303 = 0;
+var count304 = 0;
+var count401 = 0;
+var count402 = 0;
+var count403 = 0;
+var count404 = 0;
+var count500 = 0;
+var count501 = 0;
+var count502 = 0;
+var count503 = 0;
+var count504 = 0;
+                var responseTimes =[ []];
+    $(document).ready(function () {
+            $.get('http://api.serverlytics.com/c00db300/entries?key=84904069f5d7b6434a040fdebc3a8942',function (data){
+                response = data.entries;        
+		console.log(response);
+                var j = 0;
+                for (var i=0; i < response.length; i ++){
+                        if (response[i].status === "200"){
+                                count200++;
+                        }
+                        if (response[i].status === "201"){
+                                count201++;
+                        } 
+                        if (response[i].status === "203"){
+                                count203++;
+                        } 
+                        if (response[i].status === "204"){
+                                count204++;
+                        }                         
+                        if (response[i].status === "206"){
+                                count206++;
+                        } 
+                        if (response[i].status === "300"){
+                                count300++;
+                        } 
+                        if (response[i].status === "301"){
+                                count301++;
+                        } 
+                        if (response[i].status === "302"){
+                                count302++;
+                        } 
+                        if (response[i].status === "303"){
+                                count303++;
+                        } 
+                        if (response[i].status === "304"){
+                                count304++;
+                        } 
+                        if (response[i].status === "401"){
+                                count401++;
+                        } 
+                        if (response[i].status === "402"){
+                                count402++;
+                        } 
+                        if (response[i].status === "403"){
+                                count403++;
+                        } 
+                        if (response[i].status === "404"){
+                                count404++;
+                        } 
+                        if (response[i].status === "500"){
+                                count500++;
+                        }   
+                        if (response[i].status === "501"){
+                                count501++;
+                        }   
+                        if (response[i].status === "502"){
+                                count502++;
+                        }   
+                        if (response[i].status === "503"){
+                                count503++;
+                        }   
+                        if (response[i].status === "504"){
+                                count504++;
+                        }
+//			responseTimes[i].push(response[i].timestamp, response[i].timestamp_ms);
+                }
+            }); 
+      });
+      google.load("visualization", "1", {packages:["corechart"]});
+      google.setOnLoadCallback(drawRCChart);
+      google.setOnLoadCallback(drawRTChart);  
+	console.log(responseTimes);
+      function drawRCChart() {
+        var data = google.visualization.arrayToDataTable([
+          ['codes', 'No. of status codes'],
+          ['200',  count200],
+          ['201',  count201],
+          ['202',  count202],
+          ['203',  count203],
+          ['204',  count204],
+          ['206',  count206],
+          ['300',  count300],
+          ['301',  count301],
+          ['302',  count302],
+          ['303',  count303],
+          ['304',  count304],
+          ['401',  count401],
+          ['402',  count402],
+          ['403',  count403],
+          ['404',  count404],
+          ['500',  count500],
+          ['501',  count501],
+          ['502',  count502],
+          ['503',  count503],
+          ['504',  count504] 
+        ]);
+
+        var options = {
+          title: 'Response Status'
+        };
+
+        var codechart = new google.visualization.LineChart(document.getElementById('responsecode_div'));
+        codechart.draw(data, options);
+      }
+     function drawRTChart() {
+        var data = google.visualization.arrayToDataTable([
+          ['Times', 'Response times'],
+          ['2004',  1000],
+          ['2005',  1170],
+          ['2006',  660],
+          ['2007',  1030],
+          ['2008', 0]
+        ]);
+
+        var options = {
+          title: 'Response Times'
+        };
+
+        var timeschart = new google.visualization.LineChart(document.getElementById('responsetimes_div'));
+        timeschart.draw(data, options);
+      }    
+      
+    </script>
+  </head>
+  <body>
+    <div id="responsecode_div" style="width: 650px; height: 300px; left: 40px; top:40px; position :absolute"></div>
+    <div id="responsetimes_div" style="width: 650px; height: 300px; left: 40px; top:400px; position :absolute"></div>
+  </body>
+</html>
+
