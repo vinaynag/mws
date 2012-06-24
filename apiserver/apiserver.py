@@ -1,34 +1,97 @@
 #!/usr/bin/env python
 import cgi
 import datetime
+import json
 import logging
 import optparse
 import os.path
+import random
 import re
 import sys
 import time
 import uuid
 import xml.sax.saxutils
 
+import boto.dynamodb
 import cherrypy
+import ThreeScalePY
+
+THREESCALE_PROVIDER_KEY = "5513eb02d039b694ae6946077eb5bdf2"
+
+cherrypy.tools.parse_json = cherrypy.Tool('before_request_body',cherrypy.lib.jsontools.json_in)
 
 class Website:
     def __init__(self):
-        pass
+        self.boto_connection = boto.dynamodb.connect_to_region("us-west-1")
+        self.table = self.boto_connection.get_table("table")
+    
+    @cherrypy.expose
+    @cherrypy.tools.parse_json()
+    @cherrypy.tools.allow(methods=['POST'])
+    def default(self, *args):
+        cherrypy.response.headers['Content-Type'] = 'application/json'
+        json_object = cherrypy.request.json
+        print repr(json_object)
+        custid = json_object["custID"]
+        key = json_object["key"]
+        entries = json_object["entries"]
+        
+        ThreeScalePY.ThreeScaleAuthorizeUserKey(THREESCALE_PROVIDER_KEY, None, None, key).authorize()
+        
+        # {
+        #     'custID': 'c00db300',
+        #     'key': '84904069f5d7b6434a040fdebc3a8942',
+        #     'entries': [
+        #         {
+        #             'status': '404',
+        #             'bytes': '209',
+        #             'request': 'GET /favicon.ico HTTP/1.1',
+        #             'user-agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.11) Gecko/20071127 Firefox/2.0.0.11',
+        #             'identd': '-',
+        #             'host': '208.64.240.130',
+        #             'user': '-',
+        #             'referrer': '-',
+        #             'timestamp': 1201934760.0
+        #             }
+        #         ]
+        #     }
+        for entry in entries:
+            timestamp = entry["timestamp"] + random.random()
+            attrs = {
+                "custid" : custid,
+                "timestamp" : timestamp,
+                "status" : entry["status"],
+                "bytes" : entry["bytes"]
+                }
+            item = self.table.new_item(hash_key=custid, range_key=timestamp, attrs=attrs)
+            item.put()
+        return "OK"
     
     @cherrypy.expose
     @cherrypy.tools.allow(methods=['GET','HEAD'])
     @cherrypy.tools.encode(encoding='UTF-8')
     def ping(self):
-        return "Health check passed."
+        return "OK"
     
+    @cherrypy.expose
+    @cherrypy.tools.encode(encoding='UTF-8')
+    #@cherrypy.tools.parse_json()
+    @cherrypy.tools.expires(secs=0)
+    def diag(self):
+        request_line = '"%s"' % cherrypy.request.request_line
+        headers = "".join(["%s: %r\r\n" % (h,v) for (h,v) in cherrypy.request.header_list])
+        body = cherrypy.request.body.read()
+        cherrypy.response.headers['Content-Type'] = 'text/plain'
+        #print repr(cherrypy.request.body.processors)
+        return "= DIAG =\r\n" + request_line + "\r\n" + headers + "\r\n\r\n" + body
+
     @cherrypy.expose
     @cherrypy.tools.allow(methods=['GET'])
     @cherrypy.tools.encode(encoding='UTF-8')
     @cherrypy.tools.expires(secs=0)
-    def diag(self):
+    def describetable(self):
         cherrypy.response.headers['Content-Type'] = 'text/plain'
-        return "= Request Headers =\r\n" + "".join(["%s: %r\r\n" % (h,v) for (h,v) in cherrypy.request.header_list])
+        return str(self.boto_connection.describe_table("table"))
 
 def error_5xx_page(status, message, traceback, version):
     cherrypy.tools.expires.callable(secs=0)
@@ -54,26 +117,26 @@ def main(argv):
         'server.socket_port':8080,
         'server.thread_pool':10,
         'server.socketQueueSize':10,
-        'engine.autoreload_on':True,
-        'error_page.400':error_4xx_page,
-        'error_page.401':error_4xx_page,
-        'error_page.402':error_4xx_page,
-        'error_page.403':error_4xx_page,
-        'error_page.404':error_404_page,
-        'error_page.405':error_4xx_page,
-        'error_page.406':error_4xx_page,
-        'error_page.407':error_4xx_page,
-        'error_page.408':error_4xx_page,
-        'error_page.409':error_4xx_page,
-        'error_page.410':error_4xx_page,
-        'error_page.411':error_4xx_page,
-        'error_page.412':error_4xx_page,
-        'error_page.413':error_4xx_page,
-        'error_page.414':error_4xx_page,
-        'error_page.415':error_4xx_page,
-        'error_page.416':error_4xx_page,
-        'error_page.417':error_4xx_page,
-        'error_page.default':error_5xx_page
+        'engine.autoreload_on':True
+        # 'error_page.400':error_4xx_page,
+        # 'error_page.401':error_4xx_page,
+        # 'error_page.402':error_4xx_page,
+        # 'error_page.403':error_4xx_page,
+        # 'error_page.404':error_404_page,
+        # 'error_page.405':error_4xx_page,
+        # 'error_page.406':error_4xx_page,
+        # 'error_page.407':error_4xx_page,
+        # 'error_page.408':error_4xx_page,
+        # 'error_page.409':error_4xx_page,
+        # 'error_page.410':error_4xx_page,
+        # 'error_page.411':error_4xx_page,
+        # 'error_page.412':error_4xx_page,
+        # 'error_page.413':error_4xx_page,
+        # 'error_page.414':error_4xx_page,
+        # 'error_page.415':error_4xx_page,
+        # 'error_page.416':error_4xx_page,
+        # 'error_page.417':error_4xx_page,
+        # 'error_page.default':error_5xx_page
         }
     cherrypy.config.update(site_config)
     
