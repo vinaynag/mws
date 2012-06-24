@@ -1,0 +1,87 @@
+<html>  
+    <head>  
+        <title>Raphael Play</title>  
+        <script type="text/javascript" src="js/raphael-min.js"></script> 
+        <script type="text/javascript" src="js/g.raphael-min.js"></script> 
+        <script type="text/javascript" src="js/g.bar-min.js"></script>
+        <script type="text/javascript" src="js/g.line-min.js"></script>  
+        <script type="text/javascript">
+        //plot();
+         window.onload = function () {
+                var r = Raphael("holder", 800, 600),
+                    data1 = [[55, 20, 13, 32, 5, 1, 2, 10], [10, 2, 1, 5, 32, 13, 20, 55], [12, 20, 30]],
+                    data2 = [[55, 20, 13, 32, 5, 1, 2, 10], [10, 2, 1, 5, 32, 13, 20, 55], [12, 20, 30]],
+                    data3 = [[55, 20, 13, 32, 5, 1, 2, 10], [10, 2, 1, 5, 32, 13, 20, 55], [12, 20, 30]],
+                    txtattr = { font: "12px sans-serif" };
+                var x = [], y = [], y2 = [], y3 = [];
+
+                for (var i = 0; i < 120; i++) {
+                    x[i] = i * 10;
+                    //y[i] = i;
+                    y[i] = (y[i - 1] || 0) + (Math.random() * 7) - 3;
+                    y2[i] = (y2[i - 1] || 50) + (Math.random() * 7) - 3.5;
+                    y3[i] = (y3[i - 1] || 0) + (Math.random() * 7) - 4;
+                }
+	
+        	fin = function () {
+            	    this.flag = r.popup(this.bar.x, this.bar.y, this.bar.value || "0").insertBefore(this);
+	        },
+	        fout = function () {
+	            this.flag.animate({opacity: 0}, 300, function () {this.remove();});
+	        };
+                
+                r.text(160, 10, "Single Series Chart").attr(txtattr);
+                r.text(480, 10, "Multiline Series Chart").attr(txtattr);
+                //r.text(160, 250, "Simple Line Chart (1000 points)").attr(txtattr);
+                //r.text(160, 250, "Multiple Series Stacked Chart").attr(txtattr);
+                //	r.text(480, 250, 'Multiline Series Stacked Vertical Chart. Type "round"').attr(txtattr);
+                
+                //r.barchart(10, 10, 300, 220, [[55, 20, 13, 32, 5, 1, 2, 10]], 0, {type: "sharp"});
+                r.barchart(330, 10, 300, 220, data1).hover(fin, fout);
+                r.linechart(10, 10, 300, 220, x, [y.slice(0, 120), y2.slice(0, 120), y3.slice(0, 120)]).hoverColumn(function () {
+                    this.set = r.set(
+                        r.circle(this.x, this.y[0]),
+                        r.circle(this.x, this.y[1]),
+                        r.circle(this.x, this.y[2])
+                    );
+                }, function () {
+                    this.set.remove();
+                });
+                /*r.linechart(330, 10, 300, 220, x, [y.slice(0, 1e3), y2.slice(0, 1e3), y3.slice(0, 1e3)]).hoverColumn(function () {
+                    this.set = r.set(
+                        r.circle(this.x, this.y[0]),
+                        r.circle(this.x, this.y[1]),
+                        r.circle(this.x, this.y[2])
+                    );
+                }, function () {
+                    this.set.remove();
+                });*/
+                r.linechart(10, 250, 300, 220, x, [y.slice(0, 1e3), y2.slice(0, 1e3), y3.slice(0, 1e3)]).hover(function () {
+                    this.set = r.set(
+                        r.circle(this.x, this.y[0]),
+                        r.circle(this.x, this.y[1]),
+                        r.circle(this.x, this.y[2])
+                    );
+                }, function () {
+                    this.set.remove();
+                });
+                //r.barchart(10, 250, 300, 220, data2, {stacked: true});
+                //r.barchart(330, 250, 300, 220, data3, {stacked: true, type: "round"});
+            };
+
+        </script>
+        
+        <!--script type="text/javascript" src="path/to/our_script.js"></script-->  
+        <!--style type="text/css">  
+            #canvas_container {  
+                width: 500px;  
+                border: 1px solid #aaa;  
+            }  
+        </style-->  
+    </head>  
+    <body>  
+        <!--div id="canvas_container"></div-->  
+        <div id="holder"></div>
+    </body>  
+</html>  
+

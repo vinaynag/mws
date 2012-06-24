@@ -40,8 +40,8 @@ class Website:
         ThreeScalePY.ThreeScaleAuthorizeUserKey(THREESCALE_PROVIDER_KEY, None, None, key).authorize()
         hash_key = custid
         #upper_timestamp = time.time()
-        upper_timestamp = 1201934760.0 + 1800
-        lower_timestamp = upper_timestamp - 3600
+        upper_timestamp = 1327287480.0 + 12*3600
+        lower_timestamp = upper_timestamp - 243600
         range_key_condition = boto.dynamodb.condition.BETWEEN(lower_timestamp, upper_timestamp)
         entries = self.table.query(hash_key, range_key_condition)
         print repr(entries)
@@ -49,6 +49,7 @@ class Website:
         result["custid"] = custid
         result["entries"] = []
         for entry in entries:
+            entry["timestamp_ms"] = entry["timestamp"] * 1000.0
             result["entries"].append(entry)
         return json.dumps(result)
     
